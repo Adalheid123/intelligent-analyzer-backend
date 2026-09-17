@@ -1,5 +1,5 @@
 """
-统一数据库模型
+康复端 + 教学端数据库模型
 """
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
@@ -14,9 +14,12 @@ def gen_uuid():
     return str(uuid.uuid4())
 
 
-# ========== 康复端 ==========
+# ============================================================
+# 康复端
+# ============================================================
 
 class Doctor(db.Model):
+    """康复医生表"""
     __tablename__ = 'rehab_doctors'
     id = db.Column(db.String(36), primary_key=True, default=gen_uuid)
     hospital = db.Column(db.String(128), nullable=False)
@@ -43,6 +46,7 @@ class Doctor(db.Model):
 
 
 class Patient(db.Model):
+    """康复患者表"""
     __tablename__ = 'rehab_patients'
     id = db.Column(db.String(36), primary_key=True, default=gen_uuid)
     hospital = db.Column(db.String(128), nullable=False)
@@ -83,6 +87,7 @@ class Patient(db.Model):
 
 
 class Task(db.Model):
+    """康复任务表"""
     __tablename__ = 'rehab_tasks'
     id = db.Column(db.String(36), primary_key=True, default=gen_uuid)
     doctor_id = db.Column(db.String(36), db.ForeignKey('rehab_doctors.id'), nullable=False)
@@ -109,6 +114,7 @@ class Task(db.Model):
 
 
 class Submission(db.Model):
+    """康复提交记录表"""
     __tablename__ = 'rehab_submissions'
     id = db.Column(db.String(36), primary_key=True, default=gen_uuid)
     task_id = db.Column(db.String(36), db.ForeignKey('rehab_tasks.id'), nullable=True)
@@ -143,6 +149,7 @@ class Submission(db.Model):
 
 
 class Comment(db.Model):
+    """康复指导表"""
     __tablename__ = 'rehab_comments'
     id = db.Column(db.String(36), primary_key=True, default=gen_uuid)
     patient_id = db.Column(db.String(36), db.ForeignKey('rehab_patients.id'), nullable=False)
@@ -161,9 +168,16 @@ class Comment(db.Model):
 
 
 class Admin(db.Model):
+    """康复端管理员表（支持多医院管理员）
+
+    scope='global'   → 超级管理员，可看所有医院
+    scope='hospital' → 医院管理员，只能看自己医院
+    """
     __tablename__ = 'rehab_admins'
     id = db.Column(db.String(36), primary_key=True, default=gen_uuid)
     username = db.Column(db.String(64), unique=True, nullable=False)
+    hospital = db.Column(db.String(128), nullable=True)
+    scope = db.Column(db.String(16), default='hospital')
     password_hash = db.Column(db.String(256), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -172,3 +186,42 @@ class Admin(db.Model):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'username': self.username,
+            'hospital': self.hospital,
+            'scope': self.scope,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+
+# ============================================================
+# 教学端（预留，暂未使用）
+# ============================================================
+
+class TeachingAdmin(db.Model):
+    """教学端管理员表（支持多学校管理员）"""
+    __tablename__ = 'teaching_admins'
+    id = db.Column(db.String(36), primary_key=True, default=gen_uuid)
+    username = db.Column(db.String(64), unique=True, nullable=False)
+    school = db.Column(db.String(128), nullable=True)
+    scope = db.Column(db.String(16), default='school')
+    password_hash = db.Column(db.String(256), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'username': self.username,
+            'school': self.school,
+            'scope': self.scope,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
