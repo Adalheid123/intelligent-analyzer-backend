@@ -7,7 +7,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 from config import Config
-from models import db, Doctor, Patient, Admin
+from models import db, Doctor, Patient, Admin, TeachingAdmin
 from auth import generate_token, decode_token
 from routes.doctor import doctor_bp
 from routes.patient import patient_bp
@@ -84,12 +84,16 @@ def login():
         return jsonify({'success': True, 'token': token, 'user': patient.to_dict()})
 
     elif role == 'admin':
+        # 保留旧的 admin 登录路径（兼容），推荐用 /api/rehab/admin/login
         username = data.get('username', '').strip()
         admin = Admin.query.filter_by(username=username).first()
         if not admin or not admin.check_password(password):
             return jsonify({'success': False, 'error': '管理员账号或密码错误'}), 401
-        token = generate_token(admin.id, 'admin', {'username': username})
-        return jsonify({'success': True, 'token': token, 'user': {'username': username}})
+        token = generate_token(
+            admin.id, 'admin',
+            {'username': admin.username, 'scope': admin.scope, 'hospital': admin.hospital}
+        )
+        return jsonify({'success': True, 'token': token, 'user': admin.to_dict()})
 
     return jsonify({'success': False, 'error': '未知角色'}), 400
 
@@ -153,15 +157,15 @@ def change_password():
 # ========== 启动初始化 ==========
 
 def init_db():
-    """首次启动时建表 + 初始化默认管理员"""
+    """首次启动时建表 + 初始化超级管理员"""
     with app.app_context():
         db.create_all()
         if not Admin.query.filter_by(username='admin').first():
-            admin = Admin(username='admin')
+            admin = Admin(username='admin', scope='global', hospital=None)
             admin.set_password('admin123456')
             db.session.add(admin)
             db.session.commit()
-            print('✅ 默认管理员已创建：admin / admin123456')
+            print('✅ 超级管理员已创建：admin / admin123456')
 
 
 # Gunicorn 启动时会 import 这个 app，所以初始化要在这里做
