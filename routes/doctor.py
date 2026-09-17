@@ -181,4 +181,4 @@ def save_comment():
         db.session.add(comment)
 
     db.session.commit()
-    return jsonify({'success': True, 'comment': comment.to_dict
+    return jsonify({'success': True, 'comment': comment.to_dict()})
