@@ -6,11 +6,8 @@ import os
 
 class Config:
     # ========== 数据库 ==========
-    # 优先读环境变量；没有则用兜底值（Supabase）
-    DATABASE_URL = os.environ.get(
-        'DATABASE_URL',
-        'postgresql://postgres.vefydrqnckeoshpxaknt:yyq200509131421@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres'
-    )
+    # 优先读环境变量；没有则用 SQLite（本地开发兜底，生产环境由平台注入 DATABASE_URL）
+    DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///app.db')
 
     # 兼容 Railway 老格式 postgres:// → postgresql://
     if DATABASE_URL.startswith('postgres://'):
