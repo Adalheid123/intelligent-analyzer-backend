@@ -13,6 +13,7 @@ from routes.doctor import doctor_bp
 from routes.patient import patient_bp
 from routes.admin import admin_bp
 from routes.teaching import teaching_bp
+from routes.pronunciation import pronunciation_bp
 
 
 app = Flask(__name__)
@@ -30,6 +31,7 @@ app.register_blueprint(teaching_bp, url_prefix='/api/teaching')
 app.register_blueprint(doctor_bp,   url_prefix='/api/rehab/doctor')
 app.register_blueprint(patient_bp,  url_prefix='/api/rehab/patient')
 app.register_blueprint(admin_bp,    url_prefix='/api/rehab/admin')
+app.register_blueprint(pronunciation_bp, url_prefix='/api/pronunciation')
 
 
 @app.route('/')
@@ -42,6 +44,7 @@ def index():
             '/api/rehab/doctor/*',
             '/api/rehab/patient/*',
             '/api/rehab/admin/*',
+            '/api/pronunciation/*',
             '/api/rehab/login',
             '/api/rehab/register',
             '/api/rehab/change-password'
@@ -84,7 +87,6 @@ def login():
         return jsonify({'success': True, 'token': token, 'user': patient.to_dict()})
 
     elif role == 'admin':
-        # 保留旧的 admin 登录路径（兼容），推荐用 /api/rehab/admin/login
         username = data.get('username', '').strip()
         admin = Admin.query.filter_by(username=username).first()
         if not admin or not admin.check_password(password):
@@ -168,7 +170,6 @@ def init_db():
             print('✅ 超级管理员已创建：admin / admin123456')
 
 
-# Gunicorn 启动时会 import 这个 app，所以初始化要在这里做
 init_db()
 
 
